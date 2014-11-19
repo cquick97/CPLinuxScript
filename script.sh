@@ -45,8 +45,19 @@ password_policy(){
   
 # This will set the password policy in /etc/pam.d. This is different than
 # when we ran $ chage with each user.
-  
-  
 }
 
+ssh_root_login(){
+  
+# This will look to see if "PermitRootLogin yes" is in /etc/ssh/sshd_config.
+# If it is, it will change to "PermitRootLogin no".
+
+if grep -Fxq "PermitRootLogin yes" /etc/ssh/sshd_config; then
+  echo "[!] Root SSH login is enabled!"
+  cp /etc/ssh/sshd_config{,.bak}
+  sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
+  echo "[+] Root SSH login has been disabled."
+  echo "[+] If nothing bad happens after a reboot, you can remove /etc/ssh/sshd_config.bak"
+fi
+}
 
