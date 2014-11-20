@@ -77,12 +77,10 @@ firewall(){
 
     # Sets firewall based on allowed ports file
 
-    ports="$(cat ./allowed_ports)"
-
-    for i in $ports; do
-        ufw allow $i &>/dev/null
-        echo "[+] Port $i allowed"
-    done
+    while read l; do
+        ufw allow $l &>/dev/null
+        echo "[+] Port $l allowed"
+    done < ./allowed_ports
     ufw default deny &>/dev/null
     ufw enable &>/dev/null
     echo "[+] UFW defaut deny, and UFW enabled."
@@ -116,9 +114,7 @@ updates(){
     echo "[+] System has been updated"
 }
 
-users
-groups
-
+firewall
 
 
 
