@@ -23,7 +23,7 @@ users(){
     for i in $users; do
 	if grep -Fxq "$i" ./allowed_users; then
             # This is if the user is in the list of allowed users
-            echo "Cyb3rP4tr10t5:$i" | chpasswd &>/dev/null
+            echo "$i:Cyb3rP4tr10t5" | chpasswd
             # chage password policy stuff
             echo "$i" >> ./final_users
             echo "[+] $i - Password changed and password policy set"
