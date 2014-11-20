@@ -46,9 +46,9 @@ groups(){
     for i in $users; do
         echo "[+] Listing groups that '$i' is a member of:"
         echo "[+] From /etc/groups:"
-        cat /etc/group | grep "$i"
+        cat /etc/group | grep "$i" --color=auto
         echo "[+] From /etc/gshadow: (Should be the same as from /etc/group"
-        cat /etc/gshadow | grep "$i"; echo; echo
+        cat /etc/gshadow | grep "$i" --color=auto
     done
 }
 
