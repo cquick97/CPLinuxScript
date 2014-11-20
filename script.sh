@@ -28,7 +28,7 @@ users(){
             echo "$i" >> ./final_users
             echo "[+] $i - Password changed and password policy set"
         else
-            if [ "$i" -ne "root" ]; then
+            if [ "$i" != "root" ]; then
                 echo "[!] Warning! $i is not in list of approved users."
                 echo "[!] You should run \'$ userdel $i\' if this is a rogue user!"
             fi
