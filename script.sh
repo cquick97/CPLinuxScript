@@ -9,7 +9,7 @@
 # one per line. Also, create file called ./allowed_ports with one port
 # per line that is allowed.
 
-rm ./final_users 2>&1>/dev/null
+echo "" > ./final_users
 
 users(){
 
@@ -19,11 +19,11 @@ users(){
     # set the password policy with chage. Also, it will append the
     # legitimate users to a file called ./final_users.
 
-    users="$(cat /etc/passwd | grep bash | awk -f: '{ print $1 }')"
+    users="$(cat /etc/passwd | grep bash | awk -F: '{ print $1 }')"
     for i in $users; do
-        if grep -Fxq "$i" ./allowed_users; then
+	if grep -Fxq "$i" ./allowed_users; then
             # This is if the user is in the list of allowed users
-            echo "Cyb3rP4tr10t5:$i" | chpasswd 2>&1>/dev/null
+            echo "Cyb3rP4tr10t5:$i" | chpasswd &>/dev/null
             # chage password policy stuff
             echo "$i" >> ./final_users
             echo "[+] $i - Password changed and password policy set"
@@ -44,7 +44,7 @@ groups(){
     for i in $users; do
         echo "[+] Listing groups that '$i' is a member of:"
         echo "[+] From /etc/groups:"
-        cat /etc/groups | grep "$i"
+        cat /etc/group | grep "$i"
         echo "[+] From /etc/gshadow: (Should be the same as from /etc/group"
         cat /etc/gshadow | grep "$i"; echo; echo
     done
@@ -54,6 +54,7 @@ password_policy(){
 
     # This will set the password policy in /etc/pam.d. This is different than
     # when we ran $ chage with each user.
+    echo "[!] Password Policy function not done yet."
 }
 
 ssh_root_login(){
@@ -63,7 +64,7 @@ ssh_root_login(){
 
     if grep -Fxq "PermitRootLogin yes" /etc/ssh/sshd_config; then
         echo "[!] Root SSH login is enabled!"
-        cp /etc/ssh/sshd_config{,.bak} 2>&1>/dev/null
+        cp /etc/ssh/sshd_config{,.bak} &>/dev/null
         sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config 2>&1>/dev/null
         echo "[+] Root SSH login has been disabled."
         echo "[+] If nothing bad happens after a reboot, you can remove /etc/ssh/sshd_config.bak"
@@ -77,11 +78,11 @@ firewall(){
     ports="$(cat ./allowed_ports)"
 
     for i in $ports; do
-        ufw allow $i 2>&1>/dev/null
+        ufw allow $i &>/dev/null
         echo "[+] Port $i allowed"
     done
-    ufw default deny 2>&1>/dev/null
-    ufw enable 2>&1>/dev/null
+    ufw default deny &>/dev/null
+    ufw enable &>/dev/null
     echo "[+] UFW defaut deny, and UFW enabled."
 }
 
@@ -108,13 +109,13 @@ updates(){
 
     # Updates the system
 
-    apt-get update 2>&1>/dev/null
-    apt-get dist-upgrade 2>&1>/dev/null
+    apt-get update &>/dev/null
+    apt-get dist-upgrade &>/dev/null
     echo "[+] System has been updated"
 }
 
-
-
+users
+groups
 
 
 
