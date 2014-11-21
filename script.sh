@@ -90,19 +90,17 @@ ports(){
 
     # Shows all listening ports, as well as the services running on them. If
     # the service isn't required, you should remove it.
-
-    ipv4="$(netstat -tulpna | grep 'LISTEN\|ESTABLISHED' | grep -v "tcp6\|udp6" | awk '{ print $4 " - " $7 }' | awk -F: '{ print $2 }')"
-    ipv6="$(netstat -tulpna | grep 'LISTEN\|ESTABLISHED' | grep "tcp6\|udp6" | awk '{ print $4 " - " $7 }' | awk -F: '{ print $4 }')"
-
+    rm ./open_ports 2>&1>/dev/null
     echo "[+] Open ports"
+    netstat -tulpnwa | grep 'LISTEN\|ESTABLISHED' | grep -v "tcp6\|udp6" | awk '{ print $4 " - " $7 }' | awk -F: '{ print "IPV4 - " $2 }' >> ./open_ports
+    netstat -tulpnwa | grep 'LISTEN\|ESTABLISHED' | grep "tcp6\|udp6" | awk '{ print $4 " - " $7 }' | awk -F: '{ print "IPV6 - " $4 }' >> ./open_ports
 
-    for i in $ipv4; do
-        printf "\tIPV4 - $i"
-    done
+    while read l; do
+	echo $l
+	echo $l | awk '{ print $5 }' | awk -F/ '{ print $1 }'
+    done < ./open_ports
 
-    for i in $ipv6; do
-        printf "\tIPV6 - $i"
-    done
+# Pipe to file, read lines, then grep for /proc/$PID/exe to find file path, and display path.
 }
 
 updates(){
@@ -114,8 +112,5 @@ updates(){
     echo "[+] System has been updated"
 }
 
-firewall
-
-
-
+ports
 
