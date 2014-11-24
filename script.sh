@@ -97,10 +97,13 @@ ports(){
 
     while read l; do
 	echo $l
-	echo $l | awk '{ print $5 }' | awk -F/ '{ print $1 }'
+	pid=$(echo $l | awk '{ print $5 }' | awk -F/ '{ print $1 }')
+	printf "\tRunning from: $(ls -la /proc/$pid/exe | awk '{ print $11 }')\n"
+	command="$(cat /proc/$pid/cmdline | sed 's/\x0/ /g' | sed 's/.$//')"
+	if [[ $command =~ .*nc.* ]]; then
+	    printf "\t$(grep -r "$command" $(ls -l /proc/$pid/cwd | awk '{ print $11 }') | awk -F: '{ print $1 }')\n"
+	fi
     done < ./open_ports
-
-# Pipe to file, read lines, then grep for /proc/$PID/exe to find file path, and display path.
 }
 
 updates(){
