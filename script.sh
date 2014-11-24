@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # todo:
-# 
+# scheduled jobs (cron)
 
 
 
@@ -21,7 +21,7 @@ users(){
 
     users="$(cat /etc/passwd | grep bash | awk -F: '{ print $1 }')"
     for i in $users; do
-	if grep -Fxq "$i" ./allowed_users; then
+    if grep -Fxq "$i" ./allowed_users; then
             # This is if the user is in the list of allowed users
             echo "$i:Cyb3rP4tr10t5" | chpasswd
             # chage password policy stuff
@@ -59,16 +59,23 @@ password_policy(){
     echo "[!] Password Policy function not done yet."
 }
 
-ssh_root_login(){
+ssh(){
 
     # This will look to see if "PermitRootLogin yes" is in /etc/ssh/sshd_config.
     # If it is, it will change to "PermitRootLogin no".
+    cp /etc/ssh/sshd_config{,.bak} &>/dev/null
 
     if grep -Fxq "PermitRootLogin yes" /etc/ssh/sshd_config; then
         echo "[!] Root SSH login is enabled!"
-        cp /etc/ssh/sshd_config{,.bak} &>/dev/null
         sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config 2>&1>/dev/null
         echo "[+] Root SSH login has been disabled."
+        echo "[+] If nothing bad happens after a reboot, you can remove /etc/ssh/sshd_config.bak"
+    fi
+
+    if grep -Fxq "X11Forwarding yes" /etc/ssh/sshd_config; then
+    echo "[!] X11 Forwarding is enabled!"
+        sed -i 's/X11Forwarding yes/X11Forwarding no/g' /etc/ssh/sshd_config 2>&1>/dev/null
+        echo "[+] X11 Forwarding has been disabled."
         echo "[+] If nothing bad happens after a reboot, you can remove /etc/ssh/sshd_config.bak"
     fi
 }
@@ -77,6 +84,7 @@ firewall(){
 
     # Sets firewall based on allowed ports file
 
+    echo "y" | ufw reset
     while read l; do
         ufw allow $l &>/dev/null
         echo "[+] Port $l allowed"
@@ -96,15 +104,17 @@ ports(){
     netstat -tulpnwa | grep 'LISTEN\|ESTABLISHED' | grep "tcp6\|udp6" | awk '{ print $4 " - " $7 }' | awk -F: '{ print "IPV6 - " $4 }' >> ./open_ports
 
     while read l; do
-	echo $l
-	pid=$(echo $l | awk '{ print $5 }' | awk -F/ '{ print $1 }')
-	#printf "\tRunning from: $(ls -la /proc/$pid/exe | awk '{ print $11 }')\n"
-	command="$(cat /proc/$pid/cmdline | sed 's/\x0/ /g' | sed 's/.$//')"
-	if [[ $command =~ .*nc.* ]]; then
-	    for i in $(grep -r --exclude-dir={proc,sys,run,dev} "$command" $(ls -l /proc/$pid/cwd | awk '{ print $11 }') | awk -F: '{ print $1 }'); do
-	        printf "   [!]  $i\n"
-	    done
-	fi
+    echo $l
+    pid=$(echo $l | awk '{ print $5 }' | awk -F/ '{ print $1 }')
+    #printf "\tRunning from: $(ls -la /proc/$pid/exe | awk '{ print $11 }')\n"
+    command="$(cat /proc/$pid/cmdline | sed 's/\x0/ /g' | sed 's/.$//')"
+    if [[ "$command" == *"/bin/nc"* ]]; then
+        # This one below worked for Ubuntu 14.04, need to test 12.04. The uncommented one is working on Ubuntu 10.04
+        #for i in $(grep -s -r --exclude-dir={tmp,usr,var,libproc,sys,run,dev} "$command" $(ls -l /proc/$pid/cwd | awk '{ print $11 }') | awk -F: '{ print $1 }'); do
+        for i in $(grep -s -r --exclude-dir={tmp,usr,var,lib,proc,sys,run,dev} "$command" $(ls -l /proc/$pid/cwd | awk '{ print $10 }') | awk -F: '{ print $1 }' 2>/dev/null); do
+            printf "   [!]  $i\n"
+        done
+    fi
     done < ./open_ports
 }
 
@@ -117,5 +127,9 @@ updates(){
     echo "[+] System has been updated"
 }
 
+users
+groups
+ssh
+firewall
 ports
 
