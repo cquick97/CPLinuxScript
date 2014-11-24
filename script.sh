@@ -98,10 +98,12 @@ ports(){
     while read l; do
 	echo $l
 	pid=$(echo $l | awk '{ print $5 }' | awk -F/ '{ print $1 }')
-	printf "\tRunning from: $(ls -la /proc/$pid/exe | awk '{ print $11 }')\n"
+	#printf "\tRunning from: $(ls -la /proc/$pid/exe | awk '{ print $11 }')\n"
 	command="$(cat /proc/$pid/cmdline | sed 's/\x0/ /g' | sed 's/.$//')"
 	if [[ $command =~ .*nc.* ]]; then
-	    printf "\t$(grep -r "$command" $(ls -l /proc/$pid/cwd | awk '{ print $11 }') | awk -F: '{ print $1 }')\n"
+	    for i in $(grep -r --exclude-dir={proc,sys,run,dev} "$command" $(ls -l /proc/$pid/cwd | awk '{ print $11 }') | awk -F: '{ print $1 }'); do
+	        printf "   [!]  $i\n"
+	    done
 	fi
     done < ./open_ports
 }
