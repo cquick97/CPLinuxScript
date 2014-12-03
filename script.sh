@@ -22,6 +22,7 @@ users(){
             # This is if the user is in the list of allowed users
             echo "$i:Cyb3rP4tr10t5" | chpasswd
             # chage password policy stuff
+            chage -E 01/01/2016 -m 5 -M 90 -I 30 -W 14 $i
             echo "$i" >> ./final_users
             echo "[+] $i - Password changed and password policy set"
         else
