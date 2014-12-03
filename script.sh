@@ -1,9 +1,6 @@
 #!/bin/bash
 
 # todo:
-# scheduled jobs (cron)
-
-
 
 # Create file called ./allowed_users that contains the allowed users
 # one per line. Also, create file called ./allowed_ports with one port
@@ -34,8 +31,24 @@ users(){
             fi
         fi
     done
+
+    # Disable root account
     passwd -l root 2>&1>/dev/null
     echo "[+] Root account has been locked."
+
+    # Disable guest account
+    sed -i 's/allow-guest=true/allow-guest-false/g' /etc/lightdm/lightdm.conf 2>&1>/dev/null
+    if grep -Fxqv "allow-guest=false" /etc/lightdm/lightdm.conf; then
+        echo "allow-guest=false" >> /etc/lightdm/lightdm.conf
+    fi
+    echo "[+] Guest account disabled. (lightdm)"
+
+    # Hide userlist from login screen
+    sed -i 's/greeter-hide-users=false/greeter-hide-users=true/g' /etc/lightdm/lightdm.conf 2>&1>/dev/null
+    if grep -Fxqv "greeter-hide-users=false" /etc/lightdm/lightdm.conf; then
+        echo "greeter-hide-users=true" >> /etc/lightdm/lightdm.conf
+    fi
+    echo "[+] User list hidden from login screen. (lightdm)"
 }
 
 groups(){
@@ -56,7 +69,9 @@ password_policy(){
 
     # This will set the password policy in /etc/pam.d. This is different than
     # when we ran $ chage with each user.
-    echo "[!] Password Policy function not done yet."
+    echo "password   requisite    pam_cracklib.so retry=3 minlen=10 difok=3 ucredit=-1 lcredit=-2 dcredit=-1 ocredit=-1" >> /etc/pam.d/common-password
+    sed -i 's/PASS_MAX_DAYS 99999/PASS_MAX_DAYS 150/g' /etc/login.defs
+    echo "[+] Password Policy set in /etc/pam.d/common-password and /etc/login.defs"
 }
 
 ssh(){
@@ -118,6 +133,15 @@ ports(){
     done < ./open_ports
 }
 
+cron(){
+
+    # Check scheduled jobs
+    echo "[+] Listing /etc/cron* directories"
+    ls -la /etc/cron*
+    echo "[+] Listing root crontab"
+    crontab -l
+}
+
 updates(){
 
     # Updates the system
@@ -127,9 +151,11 @@ updates(){
     echo "[+] System has been updated"
 }
 
+
 users
 groups
 ssh
 firewall
 ports
-
+password_policy
+cron
