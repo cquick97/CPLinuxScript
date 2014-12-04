@@ -152,11 +152,15 @@ updates(){
     echo "[+] System has been updated"
 }
 
-
-users
-groups
-ssh
-firewall
-ports
-password_policy
-cron
+if [ -f ./allowed_users -a -f ./allowed_ports ]; then
+    #users
+    #groups
+    #ssh
+    #firewall
+    #ports
+    #password_policy
+    #cron
+else
+    echo "[!] Missing ./allowed_users or ./allowed_ports!"
+    exit
+fi
