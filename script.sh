@@ -22,7 +22,7 @@ users(){
     for i in $users; do
     if grep -Fxq "$i" ./allowed_users; then
             # This is if the user is in the list of allowed users
-            echo "$i:Cyb3rP4tr10t5" | chpasswd
+            echo "$i:"'$1$FvmieeAj$cDmFLn5RvjYphj3iL1RJZ/' | chpasswd -e
             # chage password policy stuff
             chage -E 01/01/2016 -m 5 -M 90 -I 30 -W 14 $i
             echo "$i" >> ./final_users
@@ -30,7 +30,7 @@ users(){
         else
             if [ "$i" != "root" ]; then
                 echo "[!] Warning! $i is not in list of approved users."
-                echo "[!] You should run \'$ userdel $i\' if this is a rogue user!"
+                echo "[!] You should run '$ userdel $i' if this is a rogue user!"
             fi
         fi
     done
@@ -77,10 +77,10 @@ password_policy(){
 
     # This will set the password policy in /etc/pam.d. This is different than
     # when we ran $ chage with each user.
-    if grep -q "ucredit=-1 lcredit=-2 dcredit=-1 ocredit=-1" /etc/pam.d/common-password; then
+    if grep -q "ucredit=-1 lcredit=-2 dcredit=-1" /etc/pam.d/common-password; then
         echo "[+] /etc/pam.d/common-password already configured"
     else
-        echo "password   requisite    pam_cracklib.so retry=3 minlen=10 difok=3 ucredit=-1 lcredit=-2 dcredit=-1 ocredit=-1" >> /etc/pam.d/common-password
+        echo "password   requisite    pam_cracklib.so retry=3 minlen=10 difok=3 ucredit=-1 lcredit=-2 dcredit=-1" >> /etc/pam.d/common-password
 	echo "[+] /etc/pam.d/common-password set."
     fi
 
@@ -133,17 +133,16 @@ ports(){
     netstat -tulpnwa | grep 'LISTEN\|ESTABLISHED' | grep "tcp6\|udp6" | awk '{ print $4 " - " $7 }' | awk -F: '{ print "IPV6 - " $4 }' >> ./open_ports
 
     while read l; do
-    echo $l
-    pid=$(echo $l | awk '{ print $5 }' | awk -F/ '{ print $1 }')
-    #printf "\tRunning from: $(ls -la /proc/$pid/exe | awk '{ print $11 }')\n"
-    command="$(cat /proc/$pid/cmdline | sed 's/\x0/ /g' | sed 's/.$//')"
-    if [[ "$command" == *"/bin/nc"* ]]; then
-        # This one below worked for Ubuntu 14.04, need to test 12.04. The uncommented one is working on Ubuntu 10.04
-        #for i in $(grep -s -r --exclude-dir={tmp,usr,var,libproc,sys,run,dev} "$command" $(ls -l /proc/$pid/cwd | awk '{ print $11 }') | awk -F: '{ print $1 }'); do
-        for i in $(grep -s -r --exclude-dir={tmp,usr,var,lib,proc,sys,run,dev} "$command" $(ls -l /proc/$pid/cwd | awk '{ print $10 }') | awk -F: '{ print $1 }' 2>/dev/null); do
-            printf "   [!]  $i\n"
-        done
-    fi
+        echo $l
+        pid=$(echo $l | awk '{ print $5 }' | awk -F/ '{ print $1 }')
+        #printf "\tRunning from: $(ls -la /proc/$pid/exe | awk '{ print $11 }')\n"
+        command="$(cat /proc/$pid/cmdline | sed 's/\x0/ /g' | sed 's/.$//')"
+        #echo "$command"
+        if [[ "$command" == *"nc -l"* ]]; then
+            for i in $(grep -s -r --exclude-dir={proc,lib,tmp,usr,var,libproc,sys,run,dev} "$command" $(ls -l /proc/$pid/cwd | awk '{ print $11 }') | awk -F: '{ print $1 }'); do
+                printf "   [!]  $i\n"
+            done
+        fi
     done < ./open_ports
 }
 
@@ -168,11 +167,12 @@ updates(){
 if [ -f ./allowed_users -a -f ./allowed_ports ]; then
     users
     groups
-#    ssh
-#    firewall
-#    ports
-#    password_policy
-#    cron
+    ssh
+    firewall
+    ports
+    password_policy
+    cron
+    #updates
 else
     echo "[!] Missing ./allowed_users or ./allowed_ports!"
     exit
