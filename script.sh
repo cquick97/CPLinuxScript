@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# todo:
+# Tested:
+#	cron
+#	PW Policy
 
 # Create file called ./allowed_users that contains the allowed users
 # one per line. Also, create file called ./allowed_ports with one port
@@ -39,14 +41,19 @@ users(){
 
     # Disable guest account
     sed -i 's/allow-guest=true/allow-guest-false/g' /etc/lightdm/lightdm.conf 2>&1>/dev/null
-    if grep -Fxqv "allow-guest=false" /etc/lightdm/lightdm.conf; then
+    if grep -q "allow-guest=false" /etc/lightdm/lightdm.conf; then
+	echo "[+] Guest account already disabled!"
+    else
         echo "allow-guest=false" >> /etc/lightdm/lightdm.conf
+
     fi
     echo "[+] Guest account disabled. (lightdm)"
 
     # Hide userlist from login screen
     sed -i 's/greeter-hide-users=false/greeter-hide-users=true/g' /etc/lightdm/lightdm.conf 2>&1>/dev/null
-    if grep -Fxqv "greeter-hide-users=false" /etc/lightdm/lightdm.conf; then
+    if grep -q "greeter-hide-users=false" /etc/lightdm/lightdm.conf; then
+	echo "[+] User list already hidden!"
+    else
         echo "greeter-hide-users=true" >> /etc/lightdm/lightdm.conf
     fi
     echo "[+] User list hidden from login screen. (lightdm)"
@@ -70,8 +77,14 @@ password_policy(){
 
     # This will set the password policy in /etc/pam.d. This is different than
     # when we ran $ chage with each user.
-    echo "password   requisite    pam_cracklib.so retry=3 minlen=10 difok=3 ucredit=-1 lcredit=-2 dcredit=-1 ocredit=-1" >> /etc/pam.d/common-password
-    sed -i 's/PASS_MAX_DAYS 99999/PASS_MAX_DAYS 150/g' /etc/login.defs
+    if grep -q "ucredit=-1 lcredit=-2 dcredit=-1 ocredit=-1" /etc/pam.d/common-password; then
+        echo "[+] /etc/pam.d/common-password already configured"
+    else
+        echo "password   requisite    pam_cracklib.so retry=3 minlen=10 difok=3 ucredit=-1 lcredit=-2 dcredit=-1 ocredit=-1" >> /etc/pam.d/common-password
+	echo "[+] /etc/pam.d/common-password set."
+    fi
+
+    sed -i 's/PASS_MAX_DAYS	99999/PASS_MAX_DAYS	150/g' /etc/login.defs
     echo "[+] Password Policy set in /etc/pam.d/common-password and /etc/login.defs"
 }
 
@@ -153,13 +166,13 @@ updates(){
 }
 
 if [ -f ./allowed_users -a -f ./allowed_ports ]; then
-    #users
-    #groups
-    #ssh
-    #firewall
-    #ports
-    #password_policy
-    #cron
+    users
+    groups
+#    ssh
+#    firewall
+#    ports
+#    password_policy
+#    cron
 else
     echo "[!] Missing ./allowed_users or ./allowed_ports!"
     exit
