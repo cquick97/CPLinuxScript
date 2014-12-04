@@ -36,23 +36,23 @@ users(){
     done
 
     # Disable root account
+    echo "root:"'$1$FvmieeAj$cDmFLn5RvjYphj3iL1RJZ/' | chpasswd -e
     passwd -l root 2>&1>/dev/null
     echo "[+] Root account has been locked."
 
     # Disable guest account
     sed -i 's/allow-guest=true/allow-guest-false/g' /etc/lightdm/lightdm.conf 2>&1>/dev/null
     if grep -q "allow-guest=false" /etc/lightdm/lightdm.conf; then
-	echo "[+] Guest account already disabled!"
+        echo "[+] Guest account already disabled!"
     else
         echo "allow-guest=false" >> /etc/lightdm/lightdm.conf
-
     fi
     echo "[+] Guest account disabled. (lightdm)"
 
     # Hide userlist from login screen
     sed -i 's/greeter-hide-users=false/greeter-hide-users=true/g' /etc/lightdm/lightdm.conf 2>&1>/dev/null
     if grep -q "greeter-hide-users=false" /etc/lightdm/lightdm.conf; then
-	echo "[+] User list already hidden!"
+        echo "[+] User list already hidden!"
     else
         echo "greeter-hide-users=true" >> /etc/lightdm/lightdm.conf
     fi
@@ -77,6 +77,8 @@ password_policy(){
 
     # This will set the password policy in /etc/pam.d. This is different than
     # when we ran $ chage with each user.
+
+    apt-get update && apt-get install libpam-cracklib
     if grep -q "ucredit=-1 lcredit=-2 dcredit=-1" /etc/pam.d/common-password; then
         echo "[+] /etc/pam.d/common-password already configured"
     else
@@ -159,20 +161,50 @@ updates(){
 
     # Updates the system
 
-    apt-get update &>/dev/null
-    apt-get dist-upgrade &>/dev/null
+    # Makes sure sources are added
+    if grep -q "deb http://security.ubuntu.com/ubuntu/ precise-security restricted main multiverse universe" /etc/apt/sources.list; then
+        echo "[!] Security source already installed!"
+    else
+        echo "deb http://security.ubuntu.com/ubuntu/ precise-security restricted main multiverse universe" >> /etc/apt/sources.list
+        echo "[+] Security source added"
+    fi
+
+    if grep -q "deb http://us.archive.ubuntu.com/ubuntu/ precise-updates restricted main multiverse universe" /etc/apt/sources.list; then
+        echo "[!] Updates source already installed!"
+    else
+        echo "deb http://us.archive.ubuntu.com/ubuntu/ precise-updates restricted main multiverse universe" >> /etc/apt/sources.list
+        echo "[+] Updates source added"
+    fi
+
+    if grep -q "deb http://us.archive.ubuntu.com/ubuntu/ precise-backports restricted main multiverse universe" /etc/apt/sources.list; then
+        echo "[!] Backports source already installed!"
+    else
+        echo "deb http://us.archive.ubuntu.com/ubuntu/ precise-backports restricted main multiverse universe" >> /etc/apt/sources.list
+        echo "[+] Backports source added"
+    fi
+
+    # Check for updates daily
+    if grep -q "APT::Periodic::Update-Package-Lists \"1\";" /etc/apt/apt.conf.d/10periodic; then
+        echo "[!] Daily updates check already configured!"
+    else
+        sed -i 's/APT::Periodic::Update-Package-Lists "0";/APT::Periodic::Update-Package-Lists "1";/g' /etc/apt/apt.conf.d/10periodic
+        echo "[+] Daily updates configured"
+    fi
+
+    #apt-get update &>/dev/null
+    #apt-get dist-upgrade &>/dev/null
     echo "[+] System has been updated"
 }
 
 if [ -f ./allowed_users -a -f ./allowed_ports ]; then
-    users
-    groups
-    ssh
-    firewall
-    ports
-    password_policy
-    cron
-    #updates
+    #users
+    #groups
+    #password_policy
+    #ssh
+    #firewall
+    #ports
+    #cron
+    updates
 else
     echo "[!] Missing ./allowed_users or ./allowed_ports!"
     exit
