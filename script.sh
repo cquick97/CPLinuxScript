@@ -87,6 +87,7 @@ password_policy(){
     fi
 
     sed -i 's/PASS_MAX_DAYS	99999/PASS_MAX_DAYS	150/g' /etc/login.defs
+    sed -i 's/PASS_MIN_DAYS	0/PASS_MAX_DAYS	7/g' /etc/login.defs
     echo "[+] Password Policy set in /etc/pam.d/common-password and /etc/login.defs"
 }
 
